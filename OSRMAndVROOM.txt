@@ -1,0 +1,69 @@
+Installing necessary dependencies
+We’ll need to install Docker before we can set up containers for OSRM and VROOM. First run the code snippet below:
+
+
+1):sudo apt-get update
+
+2): sudo apt-get install python3-setuptools
+    sudo python3 -m easy_install install pip
+    python3 -m pip --version
+	
+3): sudo apt-get remove docker docker-engine docker.io
+4): sudo apt install docker.io
+5): sudo systemctl start docker
+6): sudo systemctl enable docker
+7): docker --version
+8): mkdir -p ~/osrm/maps
+9): cd ~/osrm/maps
+10): wget https://download.geofabrik.de/europe/denmark-latest.osm.pbf
+11): sudo docker pull osrm/osrm-backend
+12): sudo docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-extract -p /opt/car.lua /data/denmark-latest.osm.pbf
+13): sudo docker ps -a
+14): sudo docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-partition /data/denmark-latest.osrm
+15): sudo docker ps -a
+16): sudo docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/denmark-latest.osrm
+17): sudo docker ps -a
+18): sudo docker run -d -p 5000:5000 --rm --name osrm -v "${PWD}:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/denmark-latest.osrm
+19): sudo docker logs -f osrm
+20): curl "http://127.0.0.1:5000/route/v1/car/12.44513,55.67495;12.478921,55.679985?overview=false"
+
+VROOM:
+
+1): cd ~
+2): mkdir -p ~/vroom
+3): cd ~/vroom
+4): sudo docker run -dt --rm --name vroom -p 3000:3000 -v $PWD/conf:/conf -e VROOM_ROUTER=osrm vroomvrp/vroom-docker:v1.10.0
+
+Connect VROOM with OSRM:
+
+1): sudo docker stop osrm vroom
+2): sudo chmod -R 777 /home/usman_tahir/vroom/conf
+Update VROOM Config file. (Replace localhost with osrm)
+3): cd ~/osrm/maps/
+4): sudo docker run -d -p 5000:5000 --rm --name osrm -v "${PWD}:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/denmark-latest.osrm
+5): cd ~/vroom/
+6): sudo docker run -dt --rm --name vroom -p 3000:3000 -v $PWD/conf:/conf -e VROOM_ROUTER=osrm vroomvrp/vroom-docker:v1.10.0
+
+
+Docker Bridge Network:
+1): sudo docker network create bridge-network
+2): sudo docker network connect bridge-network osrm
+3): sudo docker network connect bridge-network vroom
+4): sudo docker network inspect bridge-network
+5): curl --header "Content-Type:application/json" --data @vroom-data.json http://127.0.0.1:3000
+
+
+Configure Apache web server: 
+1): sudo apt install apache2
+2): sudo a2enmod proxy proxy_http rewrite
+3): sudo nano /etc/apache2/sites-available/osrm.conf
+
+<VirtualHost *:80>
+    ServerName osrm.your-domain.com
+
+    ProxyPass / http://127.0.0.1:5000/
+    ProxyPassReverse / http://127.0.0.1:5000/
+</VirtualHost>
+
+4): sudo a2ensite osrm.conf
+5): sudo systemctl reload apache2
