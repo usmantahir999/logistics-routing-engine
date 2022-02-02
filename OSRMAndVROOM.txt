@@ -27,6 +27,8 @@ We’ll need to install Docker before we can set up containers for OSRM and VROO
 19): sudo docker logs -f osrm
 20): curl "http://127.0.0.1:5000/route/v1/car/12.44513,55.67495;12.478921,55.679985?overview=false"
 
+
+// Can add more profiles like bike or foot (setps: 10 to 20), make sure Add new volume for each profile 
 VROOM:
 
 1): cd ~
