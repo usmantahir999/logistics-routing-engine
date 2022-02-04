@@ -67,5 +67,24 @@ Configure Apache web server:
     ProxyPassReverse / http://127.0.0.1:5000/
 </VirtualHost>
 
+//// FOR MULTI PROFILE DEPLOYMENT//////////
+<VirtualHost *:80>
+    ServerName osrmembrace.tk
+
+    ProxyPass /routed-car/ http://127.0.0.1:5000/
+    ProxyPassReverse /routed-car/ http://127.0.0.1:5000/
+
+
+    ProxyPass /routed-bike/ http://127.0.0.1:5001/
+    ProxyPassReverse /routed-bike/ http://127.0.0.1:5001/
+
+
+    ProxyPass /routed-foot/ http://127.0.0.1:5002/
+    ProxyPassReverse /routed-foot/ http://127.0.0.1:5001/
+
+
+</VirtualHost>
+
+
 4): sudo a2ensite osrm.conf
 5): sudo systemctl reload apache2
